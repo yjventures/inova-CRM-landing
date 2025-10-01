@@ -91,12 +91,12 @@ export default function Login() {
           <Alert className="mt-6 border-info/20 bg-info/10">
             <Info className="h-4 w-4 text-info" />
             <AlertDescription className="text-xs">
-              <div className="font-semibold text-foreground">Demo Credentials</div>
+              <div className="font-semibold text-foreground">Team Inova Demo Credentials</div>
               <div className="mt-1 space-y-1 text-muted-foreground">
-                <div><strong>Sales Rep:</strong> sales.rep@salesflow.com / SalesRep123!</div>
-                <div><strong>Manager:</strong> sales.manager@salesflow.com / Manager456!</div>
-                <div><strong>Director:</strong> sales.director@salesflow.com / Director789!</div>
-                <div><strong>Admin:</strong> admin@salesflow.com / Admin2024!</div>
+                <div><strong>Sales Rep:</strong> sales.rep@inova.ai / SalesRep123!</div>
+                <div><strong>Manager:</strong> manager@inova.ai / Manager456!</div>
+                <div><strong>Director:</strong> director@inova.ai / Director789!</div>
+                <div><strong>Admin:</strong> admin@inova.ai / Admin2025!</div>
               </div>
             </AlertDescription>
           </Alert>

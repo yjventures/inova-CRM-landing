@@ -166,6 +166,72 @@ export default function Deals() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="lead-source">Lead Source</Label>
+                  <Select defaultValue="website">
+                    <SelectTrigger id="lead-source">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="referral">Referral</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                      <SelectItem value="inbound">Inbound</SelectItem>
+                      <SelectItem value="outbound">Outbound</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="industry">Industry</Label>
+                  <Select defaultValue="technology">
+                    <SelectTrigger id="industry">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technology">Technology</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                      <SelectItem value="retail">Retail</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="decision-makers">Decision Makers</Label>
+                <Input
+                  id="decision-makers"
+                  defaultValue="CTO, IT Director, Procurement Manager"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="competitor-analysis">Competitor Analysis</Label>
+                <Textarea
+                  id="competitor-analysis"
+                  rows={3}
+                  defaultValue="Competing against Salesforce and HubSpot"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline">Reset</Button>
+                <Button>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Deal
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-4">

@@ -18,6 +18,7 @@ const navigation = [
   { name: "Contacts", href: "/contacts", icon: Users },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Activity", href: "/activity", icon: Activity },
+  // { name: "Test Dashboard", href: "/test-dashboard", icon: Target},
 ];
 
 export function Layout() {

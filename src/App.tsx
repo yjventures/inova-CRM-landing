@@ -12,6 +12,7 @@ import Activity from "./pages/Activity";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { Layout } from "./components/Layout";
+import TestDashboard from "./pages/TestDashboard";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/activity" element={<Activity />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/test-dashboard" element={<TestDashboard/>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

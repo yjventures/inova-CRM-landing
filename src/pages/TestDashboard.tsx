@@ -255,30 +255,30 @@ export default function Dashboard() {
                   {stages.map((stage, stageIndex) => {
                     const totals = computeTotals(stage);
                     return (
-                      <Droppable droppableId={String(stageIndex)} key={stage.name}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className="space-y-3"
-                          >
-                            <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{stage.name}</span>
-                                <Badge variant="secondary">{stage.deals.length}</Badge>
-                              </div>
-                            </div>
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Total:</span>
-                                <span className="font-semibold">{totals.totalDisplay}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Weighted:</span>
-                                <span className="font-semibold">{totals.weightedDisplay}</span>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
+                      <div key={stage.name} className="space-y-3">
+                        <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{stage.name}</span>
+                            <Badge variant="secondary">{stage.deals.length}</Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Total:</span>
+                            <span className="font-semibold">{totals.totalDisplay}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Weighted:</span>
+                            <span className="font-semibold">{totals.weightedDisplay}</span>
+                          </div>
+                        </div>
+                        <Droppable droppableId={String(stageIndex)}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className="space-y-2 min-h-[3rem]"
+                            >
                               {stage.deals.map((deal, idx) => (
                                 <Draggable draggableId={deal.id} index={idx} key={deal.id}>
                                   {(dragProvided, snapshot) => (
@@ -313,9 +313,9 @@ export default function Dashboard() {
                               ))}
                               {provided.placeholder}
                             </div>
-                          </div>
-                        )}
-                      </Droppable>
+                          )}
+                        </Droppable>
+                      </div>
                     );
                   })}
                 </div>
@@ -374,7 +374,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="relative h-80">
-                <div className="flex h-full items-end justify-around gap-2 border-b border-l pb-16 pl-12 pr-4">
+                <div className="flex h-full items-end justify-around gap-2 border-b border-l pb-0 pl-12 pr-4">
                   {[
                     { month: "Jan", actual: 450, forecast: 420 },
                     { month: "Feb", actual: 520, forecast: 480 },
@@ -398,7 +398,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-8 mb-16 flex items-center justify-center gap-8 text-sm">
+                <div className="mt-4 mb-4 flex items-center justify-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded bg-primary" />
                     <span>Actual</span>
@@ -564,7 +564,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="relative h-64">
-                <div className="flex h-full items-end justify-around gap-2 border-b border-l pb-20 pl-12">
+                <div className="flex h-full items-end justify-around gap-2 border-b border-l pb-0 pl-12">
                   {[
                     { month: "Jan", actual: 400, target: 450 },
                     { month: "Feb", actual: 480, target: 500 },

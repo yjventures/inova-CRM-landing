@@ -8,7 +8,8 @@
         "dev": "npm run -w server dev & npm run -w client dev",
         "dev:server": "npm run -w server dev",
         "dev:client": "npm run -w client dev",
-        "build": "npm run -w server build && npm run -w client build"
+        "build": "npm run build -w server && npm run build -w client",
+        "start": "npm start -w server"
     },
     "dependencies": {
         "@tanstack/react-query": "^5.90.3",

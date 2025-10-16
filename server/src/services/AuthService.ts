@@ -5,7 +5,8 @@ import { generateToken } from '../utils/generateToken';
 
 export class AuthService {
   static async login(email: string, password: string) {
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) throw new Error('Invalid credentials');
 
     const valid = await user.comparePassword(password);

@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import { connectMongo } from './config/db';
 import { User } from './models/User';
-import { env } from './config/env';
+import { ENV } from './config/env';
 
 async function main() {
   try {
-    await connectMongo(env.MONGO_URI);
+    await connectMongo(ENV.MONGO_URI as string);
 
     const email = 'admin@inova.ai';
     const existing = await User.findOne({ email });

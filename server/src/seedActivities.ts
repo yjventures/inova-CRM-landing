@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { connectMongo } from './config/db';
-import { env } from './config/env';
+import { ENV } from './config/env';
 import { User } from './models/User';
 import { Contact } from './models/Contact';
 import { Deal } from './models/Deal';
@@ -8,7 +8,7 @@ import { Activity } from './models/Activity';
 
 async function main() {
   try {
-    await connectMongo(env.MONGO_URI);
+    await connectMongo(ENV.MONGO_URI as string);
 
     // Resolve owner (admin preferred)
     let owner = await User.findOne({ role: 'admin' });

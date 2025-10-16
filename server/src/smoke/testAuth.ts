@@ -1,19 +1,19 @@
 import mongoose from 'mongoose';
 import { connectMongo } from '../config/db';
-import { env } from '../config/env';
+import { ENV } from '../config/env';
 import { User } from '../models/User';
 
 async function main() {
   try {
-    await connectMongo(env.MONGO_URI);
+    await connectMongo(ENV.MONGO_URI as string);
 
     // Env checks
     console.log('[smoke] env checks:', {
-      ACCESS_SECRET_SET: Boolean(env.ACCESS_SECRET),
-      REFRESH_SECRET_SET: Boolean(env.REFRESH_SECRET),
-      MONGO_URI_SET: Boolean(env.MONGO_URI),
-      PORT: env.PORT,
-      CORS_ORIGIN: env.CORS_ORIGIN,
+      ACCESS_SECRET_SET: Boolean(ENV.JWT_ACCESS_SECRET),
+      REFRESH_SECRET_SET: Boolean(ENV.JWT_REFRESH_SECRET),
+      MONGO_URI_SET: Boolean(ENV.MONGO_URI),
+      PORT: ENV.PORT,
+      ALLOWED_ORIGINS: ENV.ALLOWED_ORIGINS,
     });
 
     // Verify seeded user and password hash prefix

@@ -1,9 +1,9 @@
 import { connectMongo } from './config/db';
-import { env } from './config/env';
+import { ENV } from './config/env';
 import { PipelineStage } from './models/PipelineStage';
 
 (async () => {
-  await connectMongo(env.MONGO_URI);
+  await connectMongo(ENV.MONGO_URI as string);
 
   const defaults = [
     { name: 'Lead', probability: 10, type: 'open', color: '#9CA3AF', order: 1 },

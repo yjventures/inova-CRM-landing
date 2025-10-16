@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
-import { env } from '../config/env';
+import { ENV } from '../config/env';
 import { generateToken } from '../utils/generateToken';
 
 export class AuthService {
@@ -13,8 +13,8 @@ export class AuthService {
     if (!user.isActive) throw new Error('User is inactive');
 
     const payload = { sub: user._id.toString(), role: user.role, email: user.email };
-    const accessToken = generateToken(payload, env.ACCESS_SECRET, '15m');
-    const refreshToken = generateToken(payload, env.REFRESH_SECRET, '7d');
+    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, '15m');
+    const refreshToken = generateToken(payload, ENV.JWT_REFRESH_SECRET as string, '7d');
 
     return {
       user: user.toSafeJSON(),
@@ -23,7 +23,7 @@ export class AuthService {
   }
 
   static verifyRefreshToken(token: string) {
-    return jwt.verify(token, env.REFRESH_SECRET);
+    return jwt.verify(token, ENV.JWT_REFRESH_SECRET as string);
   }
 
   static async refreshTokens(refreshToken: string) {
@@ -34,8 +34,8 @@ export class AuthService {
     if (!user.isActive) throw new Error('User is inactive');
 
     const payload = { sub: user._id.toString(), role: user.role, email: user.email };
-    const accessToken = generateToken(payload, env.ACCESS_SECRET, '15m');
-    const newRefreshToken = generateToken(payload, env.REFRESH_SECRET, '7d');
+    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, '15m');
+    const newRefreshToken = generateToken(payload, ENV.JWT_REFRESH_SECRET as string, '7d');
     return {
       user: user.toSafeJSON(),
       tokens: { accessToken, refreshToken: newRefreshToken },

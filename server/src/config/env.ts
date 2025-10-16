@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// ✅ Main configuration object
 export const ENV = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.PORT || 4000,
@@ -15,3 +16,10 @@ export const ENV = {
   FILES_HARD_DELETE: process.env.FILES_HARD_DELETE === 'true',
   TZ: process.env.TZ || 'Australia/Sydney',
 };
+
+// ✅ Alias for backward compatibility
+// This ensures imports like `import { env } from '../config/env'` still work.
+export const env = ENV;
+
+// ✅ Optional: default export (nice for quick imports)
+export default ENV;

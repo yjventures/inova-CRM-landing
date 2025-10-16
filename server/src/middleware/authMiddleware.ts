@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
+import { ENV } from '../config/env';
 
 export async function requireAuth(req: Request & { user?: any }, res: Response, next: NextFunction) {
   try {
@@ -9,7 +9,7 @@ export async function requireAuth(req: Request & { user?: any }, res: Response, 
       return res.status(401).json({ ok: false, message: 'Unauthorized' });
     }
     const token = header.slice('Bearer '.length);
-    const decoded = jwt.verify(token, env.ACCESS_SECRET);
+    const decoded = jwt.verify(token, ENV.JWT_ACCESS_SECRET as string);
     req.user = decoded;
     return next();
   } catch (_err) {

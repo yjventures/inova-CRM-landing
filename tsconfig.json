@@ -1,16 +1,25 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  "references": [
+    { "path": "./client/tsconfig.app.json" },
+    { "path": "./client/tsconfig.node.json" }
+  ],
   "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["client/src/*"]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
     "skipLibCheck": true,
-    "allowJs": true,
     "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
     "strictNullChecks": false
   }
 }
+
+

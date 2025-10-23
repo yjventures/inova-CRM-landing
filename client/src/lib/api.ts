@@ -22,7 +22,8 @@ api.interceptors.request.use((config) => {
   try {
     const token = getAccessToken();
     if (token) {
-      config.headers = config.headers ?? {};
+      // Ensure headers object is present and typed correctly
+      config.headers = config.headers || {} as any;
       (config.headers as any).Authorization = `Bearer ${token}`;
     }
   } catch {}

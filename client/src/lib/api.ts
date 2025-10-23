@@ -1,7 +1,20 @@
 import axios from 'axios';
 import { getAccessToken } from './auth';
 
-const baseURL = `${import.meta.env.VITE_API_URL}`;
+function normalizeBaseURL(raw?: string) {
+  let s = (raw || '').trim();
+  if (!s) {
+    // Default to same-origin /api during local dev if not provided
+    s = `${window.location.origin}/api`;
+  }
+  // remove trailing slash
+  if (s.endsWith('/')) s = s.slice(0, -1);
+  // ensure /api suffix
+  if (!/\/api$/i.test(s)) s = `${s}/api`;
+  return s;
+}
+
+const baseURL = normalizeBaseURL(import.meta.env.VITE_API_URL as any);
 
 export const api = axios.create({ baseURL });
 

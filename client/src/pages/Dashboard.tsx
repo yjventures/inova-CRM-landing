@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { useDealsPipeline, useDealMove, useDashboardKpis, useUpcomingTasks } from "@/lib/hooks/dashboard";
+import { useDealsPipeline, useDealMove, useDashboardKpis, useUpcomingTasks, usePipelineSummary } from "@/lib/hooks/dashboard";
 import { health } from "@/lib/api";
 
-type Deal = { _id: string; title: string; amount: number; probability: number; stage: string; ownerId?: string };
+type Deal = { _id: string; title: string; amount: number; probability: number; stage: string; ownerId?: any; contactId?: any; owner?: string; contact?: string; company?: string; daysInStage?: number; lastStageUpdate?: string };
 type Stage = { name: string; deals: Deal[] };
 
 const stageColorMap: Record<string, string> = {
@@ -45,6 +45,7 @@ export default function Dashboard() {
   const { data: pipeline = [], isLoading: loadingPipeline, isError: errorPipeline, refetch: refetchPipeline } = useDealsPipeline();
   const { data: kpis, isLoading: loadingKpis, isError: errorKpis, refetch: refetchKpis } = useDashboardKpis();
   const { data: upcoming = [], isLoading: loadingUpcoming, isError: errorUpcoming, refetch: refetchUpcoming } = useUpcomingTasks(5);
+  const { data: pipelineSummary } = usePipelineSummary();
   const moveMutation = useDealMove();
 
   const stages = pipeline as Stage[];
@@ -59,6 +60,18 @@ export default function Dashboard() {
       console.log('[api/health] failed', err);
     });
   }, []);
+
+  function formatCurrencyCompact(value?: number) {
+    const n = Number(value || 0);
+    if (n >= 1_000_000) return `$${Math.round(n / 1_000_000)}M`;
+    if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
+    return `$${Math.round(n)}`;
+  }
+
+  function formatPercent(value?: number) {
+    const v = Number(value || 0);
+    return `${Math.round(v)}%`;
+  }
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -130,7 +143,7 @@ export default function Dashboard() {
             <TrendingUp className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$0.7M</div>
+            <div className="text-3xl font-bold">{formatCurrencyCompact(kpis?.pipelineValue)}</div>
           </CardContent>
         </Card>
 
@@ -142,7 +155,7 @@ export default function Dashboard() {
             <Target className="h-5 w-5 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$0.5M</div>
+            <div className="text-3xl font-bold">{formatCurrencyCompact(pipelineSummary?.totals?.weightedValue)}</div>
           </CardContent>
         </Card>
 
@@ -154,7 +167,7 @@ export default function Dashboard() {
             <Briefcase className="h-5 w-5 text-info" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">7</div>
+            <div className="text-3xl font-bold">{pipelineSummary?.totals?.count ?? 0}</div>
           </CardContent>
         </Card>
 
@@ -166,7 +179,7 @@ export default function Dashboard() {
             <Trophy className="h-5 w-5 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">74%</div>
+            <div className="text-3xl font-bold">{formatPercent(kpis?.quotaAchievement)}</div>
           </CardContent>
         </Card>
       </div>
@@ -224,7 +237,7 @@ export default function Dashboard() {
                                     >
                                       <Card className={`border-l-4 ${stageColorMap[stage.name] ?? 'border-l-muted'} ${snapshot.isDragging ? "shadow-lg ring-2 ring-primary/30" : ""}`}>
                                         <CardContent className="p-4">
-                                          <div className="mb-2 font-medium">{deal.title}</div>
+                                          <div className="mb-2 font-medium">{(deal.title || '').length > 20 ? (deal.title || '').slice(0, 20) + '…' : (deal.title || '')}</div>
                                           <div className="mb-3 flex items-center justify-between">
                                             <span className="text-lg font-bold">${Math.round((deal.amount || 0) / 1000)}K</span>
                                             <Badge variant="outline">{Math.round(deal.probability || 0)}%</Badge>
@@ -232,10 +245,14 @@ export default function Dashboard() {
                                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <Avatar className="h-6 w-6">
                                               <AvatarFallback className="bg-primary text-[10px] text-primary-foreground">
-                                                NA
+                                                {(deal.owner || 'NA').split(' ').map((s: string)=>s[0]).filter(Boolean).slice(0,2).join('') || 'NA'}
                                               </AvatarFallback>
                                             </Avatar>
-                                            <span>—</span>
+                                            <span>{((deal.contact || '—') as string).length > 15 ? ((deal.contact || '—') as string).slice(0, 15) + '…' : (deal.contact || '—')}</span>
+                                          </div>
+                                          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                                            <span>{deal.daysInStage != null ? `${deal.daysInStage} days in stage` : '—'}</span>
+                                            <span>{deal.lastStageUpdate ? 'Updated ' + new Intl.RelativeTimeFormat(undefined,{numeric:'auto'}).format(-Math.max(1, Math.floor((Date.now() - new Date(deal.lastStageUpdate).getTime())/ (1000*60*60))), 'hour') : ''}</span>
                                           </div>
                                         </CardContent>
                                       </Card>
@@ -379,26 +396,26 @@ export default function Dashboard() {
                           fill="none"
                           stroke="hsl(var(--success))"
                           strokeWidth="16"
-                          strokeDasharray={`${2 * Math.PI * 56 * 0.74} ${2 * Math.PI * 56}`}
+                          strokeDasharray={`${2 * Math.PI * 56 * Math.min(1, Math.max(0, (Number(kpis?.quotaAchievement || 0) / 100))) } ${2 * Math.PI * 56}`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-success">
-                        74%
+                        {formatPercent(kpis?.quotaAchievement)}
                       </div>
                     </div>
                     <div className="space-y-2 leading-tight">
                       <div>
                         <div className="text-sm text-muted-foreground">Quota</div>
-                        <div className="text-xl font-bold">$2.5M</div>
+                        <div className="text-xl font-bold">{formatCurrencyCompact(kpis?.quotaTarget)}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Achieved</div>
-                        <div className="text-xl font-bold text-success">$1.9M</div>
+                        <div className="text-xl font-bold text-success">{formatCurrencyCompact(kpis?.wonValue)}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Remaining</div>
-                        <div className="text-xl font-bold">$0.7M</div>
+                        <div className="text-xl font-bold">{formatCurrencyCompact(Math.max(0, Number(kpis?.quotaTarget || 0) - Number(kpis?.wonValue || 0)))}</div>
                       </div>
                     </div>
                   </div>
@@ -417,7 +434,7 @@ export default function Dashboard() {
                           fill="none"
                           stroke="hsl(var(--success))"
                           strokeWidth="16"
-                          strokeDasharray={`${2 * Math.PI * 56 * 0.74} ${2 * Math.PI * 56}`}
+                          strokeDasharray={`${2 * Math.PI * 56 * Math.min(1, Math.max(0, (Number(kpis?.winRate || 0) / 100))) } ${2 * Math.PI * 56}`}
                           strokeLinecap="round"
                         />
                         <circle
@@ -427,28 +444,28 @@ export default function Dashboard() {
                           fill="none"
                           stroke="hsl(var(--destructive))"
                           strokeWidth="16"
-                          strokeDasharray={`${2 * Math.PI * 56 * 0.26} ${2 * Math.PI * 56}`}
-                          strokeDashoffset={`${-2 * Math.PI * 56 * 0.74}`}
+                          strokeDasharray={`${2 * Math.PI * 56 * Math.min(1, Math.max(0, (1 - Number(kpis?.winRate || 0) / 100))) } ${2 * Math.PI * 56}`}
+                          strokeDashoffset={`${-2 * Math.PI * 56 * Math.min(1, Math.max(0, (Number(kpis?.winRate || 0) / 100))) }`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-2xl font-bold text-success">74%</div>
-                        <div className="mt-1 text-xs font-bold text-destructive">26%</div>
+                        <div className="text-2xl font-bold text-success">{formatPercent(kpis?.winRate)}</div>
+                        <div className="mt-1 text-xs font-bold text-destructive">{formatPercent(100 - Number(kpis?.winRate || 0))}</div>
                       </div>
                     </div>
                     <div className="space-y-2 leading-tight">
                       <div>
                         <div className="text-sm text-muted-foreground">Deals Won</div>
-                        <div className="text-xl font-bold text-success">23</div>
+                        <div className="text-xl font-bold text-success">{kpis?.wonDeals ?? 0}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Deals Lost</div>
-                        <div className="text-xl font-bold text-destructive">8</div>
+                        <div className="text-xl font-bold text-destructive">{kpis?.lostDeals ?? 0}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Win Rate</div>
-                        <div className="text-xl font-bold">74.2%</div>
+                        <div className="text-xl font-bold">{formatPercent(kpis?.winRate)}</div>
                       </div>
                     </div>
                   </div>
@@ -462,28 +479,28 @@ export default function Dashboard() {
                     $
                   </div>
                   <div className="text-sm text-muted-foreground">Avg Deal Size</div>
-                  <div className="text-2xl font-bold">$85K</div>
+                  <div className="text-2xl font-bold">{formatCurrencyCompact(kpis?.avgDealSize)}</div>
                 </div>
                 <div className="flex flex-col items-center rounded-lg bg-success/10 p-5">
                   <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div className="text-sm text-muted-foreground">Conversion Rate</div>
-                  <div className="text-2xl font-bold">28.5%</div>
+                  <div className="text-2xl font-bold">{formatPercent(kpis?.winRate)}</div>
                 </div>
                 <div className="flex flex-col items-center rounded-lg bg-warning/10 p-5">
                   <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-warning/20 text-warning">
                     <Target className="h-5 w-5" />
                   </div>
                   <div className="text-sm text-muted-foreground">Avg Sales Cycle</div>
-                  <div className="text-2xl font-bold">45 days</div>
+                  <div className="text-2xl font-bold">{(kpis?.avgSalesCycleDays ?? 0)} days</div>
                 </div>
                 <div className="flex flex-col items-center rounded-lg bg-info/10 p-5">
                   <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-info/20 text-info">
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div className="text-sm text-muted-foreground">Activities</div>
-                  <div className="text-2xl font-bold">127</div>
+                  <div className="text-2xl font-bold">{kpis?.totalActivities ?? 0}</div>
                 </div>
               </div>
             </CardContent>
@@ -538,114 +555,80 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Upcoming Tasks</CardTitle>
-                <div className="text-right">
-                  <div className="text-sm font-semibold">5</div>
-                  <div className="text-xs text-muted-foreground">pending</div>
-                </div>
-                <Button variant="link" size="sm" className="text-primary">
-                  View All
-                </Button>
+                <Link to="/activity">
+                  <Button size="sm" className="ml-auto">View All</Button>
+                </Link>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {[
-                {
-                  title: "Follow up with Acme Corp",
-                  description: "Send pricing proposal and schedule demo",
-                  assignee: "John Smith",
-                  company: "Acme Corporation",
-                  due: "2h",
-                  priority: "high",
-                  initials: "JS",
-                },
-                {
-                  title: "Demo call with FutureTech",
-                  description: "Product demonstration and Q&A session",
-                  assignee: "Lisa Thompson",
-                  company: "FutureTech Solutions",
-                  due: "4h",
-                  priority: "high",
-                  initials: "LT",
-                },
-                {
-                  title: "Send contract to MegaCorp",
-                  description: "Final contract review and signature",
-                  assignee: "David Wilson",
-                  company: "MegaCorp Industries",
-                  due: "1d",
-                  priority: "medium",
-                  initials: "DW",
-                },
-                {
-                  title: "Quarterly review with Global Systems",
-                  description: "Review implementation progress and next steps",
-                  assignee: "Michael Chen",
-                  company: "Global Systems Ltd",
-                  due: "2d",
-                  priority: "medium",
-                  initials: "MC",
-                },
-                {
-                  title: "Update CRM for TechStart deal",
-                  description: "Add meeting notes and next action items",
-                  assignee: "Sarah Johnson",
-                  company: "TechStart Inc",
-                  due: "3d",
-                  priority: "low",
-                  initials: "SJ",
-                },
-              ].map((task, idx) => (
-                <Card key={idx} className="border-l-4 border-l-primary/20">
-                  <CardContent className="p-4">
-                    <div className="mb-2 flex items-start gap-2">
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-gray-300"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{task.title}</div>
-                        <p className="text-xs text-muted-foreground">{task.description}</p>
+              {loadingUpcoming && (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              )}
+              {errorUpcoming && (
+                <div className="text-sm text-destructive">Failed to load tasks.</div>
+              )}
+              {!loadingUpcoming && !errorUpcoming && upcoming.length === 0 && (
+                <div className="text-sm text-muted-foreground">No upcoming tasks.</div>
+              )}
+              {!loadingUpcoming && !errorUpcoming && upcoming.map((a: any) => {
+                const owner = typeof a.ownerId === 'object' ? a.ownerId : undefined;
+                const contact = typeof a.contactId === 'object' ? a.contactId : undefined;
+                const displayName = contact?.fullName || owner?.fullName || '—';
+                const initials = (displayName || 'NA')
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((s: string) => s[0]?.toUpperCase())
+                  .join('') || 'NA';
+                const due = (() => {
+                  if (!a.dueAt) return '—';
+                  const t = new Date(a.dueAt).getTime();
+                  const now = Date.now();
+                  const diffSec = Math.max(0, Math.floor((t - now) / 1000));
+                  const mins = Math.floor(diffSec / 60);
+                  if (mins < 60) return `${mins}m`;
+                  const hrs = Math.floor(mins / 60);
+                  if (hrs < 24) return `${hrs}h`;
+                  const days = Math.floor(hrs / 24);
+                  return `${days}d`;
+                })();
+                const priority = (a.priority || 'medium') as 'low'|'medium'|'high';
+                return (
+                  <Card key={a._id} className="border-l-4 border-l-primary/20">
+                    <CardContent className="p-4">
+                      <div className="mb-2 flex items-start gap-2">
+                        <input type="checkbox" className="mt-1 h-4 w-4 rounded border-gray-300" />
+                        <div className="flex-1">
+                          <div className="font-medium">{a.title}</div>
+                          <p className="text-xs text-muted-foreground">{a.notes || ''}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="ml-6 flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        <AvatarFallback className="bg-primary text-[10px] text-primary-foreground">
-                          {task.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs text-muted-foreground">
-                        {task.assignee} • {task.company}
-                      </span>
-                    </div>
-                    <div className="ml-6 mt-2 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Due in {task.due}</span>
-                      <Badge
-                        variant={
-                          task.priority === "high"
-                            ? "destructive"
-                            : task.priority === "medium"
-                            ? "secondary"
-                            : "outline"
-                        }
-                        className={
-                          task.priority === "medium"
-                            ? "bg-warning text-warning-foreground"
-                            : task.priority === "low"
-                            ? "border-success text-success"
-                            : ""
-                        }
-                      >
-                        {task.priority}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="ml-6 flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarFallback className="bg-primary text-[10px] text-primary-foreground">{initials}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs text-muted-foreground">{displayName}</span>
+                      </div>
+                      <div className="ml-6 mt-2 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Due in {due}</span>
+                        <Badge
+                          variant={priority === 'high' ? 'destructive' : priority === 'medium' ? 'secondary' : 'outline'}
+                          className={priority === 'high' ? '' : priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'border-green-500 text-green-600'}
+                        >
+                          {priority === 'high' ? 'High' : priority === 'medium' ? 'Medium' : 'Low'}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
 
-              <Button variant="outline" className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Task
-              </Button>
+              <Link to="/activity">
+                <Button className="w-full mt-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Task
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

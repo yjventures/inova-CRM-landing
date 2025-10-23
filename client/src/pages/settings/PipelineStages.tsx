@@ -149,7 +149,7 @@ export default function PipelineStages() {
                                 <td className="py-2">
                                   <div className="flex items-center gap-2">
                                     <Button size="sm" variant="outline" onClick={()=>{ setEditId(s._id); setForm({ name: s.name, probability: s.probability, type: s.type, color: s.color }); setOpen(true); }}><Edit2 className="mr-2 h-4 w-4"/>Edit</Button>
-                                    <Button size="sm" variant="destructive" onClick={()=>deleteMutation.mutate(s._id)}><Trash2 className="mr-2 h-4 w-4"/>Delete</Button>
+                                    <Button size="sm" variant="outline" className="bg-red-100 text-red-700 border-red-300 hover:bg-red-200 hover:text-red-800" onClick={()=>deleteMutation.mutate(s._id)}><Trash2 className="mr-2 h-4 w-4"/>Delete</Button>
                                   </div>
                                 </td>
                               </tr>

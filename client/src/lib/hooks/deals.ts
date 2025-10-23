@@ -9,12 +9,16 @@ export type DealsQuery = {
   limit?: number;
 };
 
+export type DealsListItem = { _id: string; title: string; amount: number; stage: string; probability: number };
+export type DealsListMeta = { page?: number; limit?: number; total?: number; pages?: number };
+export type DealsListResponse = { ok: boolean; data: DealsListItem[]; meta?: DealsListMeta };
+
 export function useDeals(query: DealsQuery = {}) {
   const params = { ...query } as any;
-  return useQuery({
+  return useQuery<DealsListResponse>({
     queryKey: ['deals', params],
     queryFn: async () => {
-      const res = await get<any>('/deals', params);
+      const res = await get<DealsListResponse>('/deals', params);
       return res; // { ok, data, meta }
     },
     keepPreviousData: true,

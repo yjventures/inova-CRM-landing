@@ -11,6 +11,18 @@ export interface IContact extends Document {
   ownerId: Types.ObjectId;
   tags: string[];
   notes?: string;
+  notesList?: Array<{
+    _id: Types.ObjectId;
+    text: string;
+    authorId?: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  websiteUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
   lastContactedAt?: Date;
   deletedAt?: Date;
 }
@@ -32,11 +44,28 @@ const ContactSchema = new Schema<IContact>(
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     tags: { type: [String], default: [] },
     notes: { type: String },
+    linkedinUrl: { type: String, trim: true },
+    twitterUrl: { type: String, trim: true },
+    websiteUrl: { type: String, trim: true },
+    instagramUrl: { type: String, trim: true },
+    facebookUrl: { type: String, trim: true },
     lastContactedAt: { type: Date },
     deletedAt: { type: Date },
   },
   { timestamps: true }
 );
+
+const NoteSubSchema = new Schema(
+  {
+    text: { type: String, required: true },
+    authorId: { type: Schema.Types.ObjectId, ref: 'User' },
+  },
+  { timestamps: true, _id: true }
+);
+
+// attach after declared to avoid circular types
+// @ts-ignore
+ContactSchema.add({ notesList: { type: [NoteSubSchema], default: [] } });
 
 // Indexes
 ContactSchema.index({ fullName: 'text', email: 'text', company: 'text' });

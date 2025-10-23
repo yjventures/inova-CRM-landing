@@ -7,16 +7,51 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { post } from "@/lib/api";
+import { setAccessToken } from "@/lib/auth";
 
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const copyText = async (text: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+    } catch (_) {
+      // no-op: copying is a convenience, not critical
+    }
+  };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await post<any>("/auth/login", { email, password });
+      const access = res?.data?.tokens?.accessToken;
+      const refresh = res?.data?.tokens?.refreshToken;
+      if (!access) throw new Error("Login failed");
+      setAccessToken(access, refresh);
+      navigate("/dashboard");
+    } catch (err: any) {
+      const message = err?.response?.data?.error?.message || err?.message || "Login failed";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,9 +118,13 @@ export default function Login() {
               </Button>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Sign In
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
+
+            {error ? (
+              <div className="text-sm text-red-500">{error}</div>
+            ) : null}
           </form>
 
           <Alert className="mt-6 border-info/20 bg-info/10">
@@ -93,10 +132,30 @@ export default function Login() {
             <AlertDescription className="text-xs">
               <div className="font-semibold text-foreground">Team Inova Demo Credentials</div>
               <div className="mt-1 space-y-1 text-muted-foreground">
-                <div><strong>Sales Rep:</strong> sales.rep@inova.ai / SalesRep123!</div>
-                <div><strong>Manager:</strong> manager@inova.ai / Manager456!</div>
-                <div><strong>Director:</strong> director@inova.ai / Director789!</div>
-                <div><strong>Admin:</strong> admin@inova.ai / Admin2025!</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <strong className="mr-1">Sales Rep:</strong>
+                  <button type="button" onClick={() => copyText("sales.rep@inova.ai")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy email">sales.rep@inova.ai</button>
+                  <span>/</span>
+                  <button type="button" onClick={() => copyText("SalesRep123!")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy password">SalesRep123!</button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <strong className="mr-1">Manager:</strong>
+                  <button type="button" onClick={() => copyText("manager@inova.ai")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy email">manager@inova.ai</button>
+                  <span>/</span>
+                  <button type="button" onClick={() => copyText("Manager456!")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy password">Manager456!</button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <strong className="mr-1">Director:</strong>
+                  <button type="button" onClick={() => copyText("director@inova.ai")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy email">director@inova.ai</button>
+                  <span>/</span>
+                  <button type="button" onClick={() => copyText("Director789!")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy password">Director789!</button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <strong className="mr-1">Admin:</strong>
+                  <button type="button" onClick={() => copyText("admin@inova.ai")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy email">admin@inova.ai</button>
+                  <span>/</span>
+                  <button type="button" onClick={() => copyText("InovaAdmin2025!")} className="rounded bg-muted px-2 py-0.5 hover:bg-muted/80" title="Copy password">InovaAdmin2025!</button>
+                </div>
               </div>
             </AlertDescription>
           </Alert>

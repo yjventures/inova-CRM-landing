@@ -18,6 +18,7 @@ export interface IActivity extends Document {
     size?: number;
     type?: string;
   }>;
+  company?: string;
   deletedAt?: Date | null;
 }
 
@@ -45,6 +46,7 @@ const ActivitySchema = new Schema<IActivity>(
     contactId: { type: Schema.Types.ObjectId, ref: 'Contact' },
     dealId: { type: Schema.Types.ObjectId, ref: 'Deal' },
     attachments: { type: [AttachmentSchema], default: [] },
+    company: { type: String, trim: true },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }

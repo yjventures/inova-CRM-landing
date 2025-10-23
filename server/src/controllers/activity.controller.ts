@@ -35,10 +35,11 @@ export const activityController = {
       if (contactId) filter.contactId = contactId;
       if (dealId) filter.dealId = dealId;
 
+      // Date range filters: apply to updatedAt (timeline view), not dueAt (tasks)
       if (dueFrom || dueTo) {
-        filter.dueAt = {};
-        if (dueFrom) filter.dueAt.$gte = new Date(dueFrom);
-        if (dueTo) filter.dueAt.$lte = new Date(dueTo);
+        filter.updatedAt = {};
+        if (dueFrom) filter.updatedAt.$gte = new Date(dueFrom);
+        if (dueTo) filter.updatedAt.$lte = new Date(dueTo);
       }
 
       if (isAdminOrManager(role)) {
@@ -54,7 +55,14 @@ export const activityController = {
 
       const skip = (page - 1) * limit;
       const [items, total] = await Promise.all([
-        Activity.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+        Activity.find(filter)
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .populate({ path: 'contactId', select: 'fullName email company' })
+          .populate({ path: 'ownerId', select: 'fullName email role' })
+          .populate({ path: 'dealId', select: 'amount title' })
+          .lean(),
         Activity.countDocuments(filter),
       ]);
 
@@ -89,19 +97,35 @@ export const activityController = {
       const role = req.user?.role as string | undefined;
       const requesterId = req.user?._id || req.user?.sub;
 
-      const { type, title, notes, priority, dueAt, contactId, dealId, attachments, ownerId } = req.body ?? {};
+      const { type, title, notes, priority, dueAt, contactId, dealId, attachments, ownerId, company } = req.body ?? {};
       if (!type || typeof type !== 'string') return res.status(400).json({ ok: false, message: 'type is required' });
       if (!title || typeof title !== 'string') return res.status(400).json({ ok: false, message: 'title is required' });
+
+      // Validate optional ObjectId references to avoid CastError 500s
+      if (contactId && !mongoose.Types.ObjectId.isValid(String(contactId))) {
+        return res.status(400).json({ ok: false, message: 'Invalid contactId' });
+      }
+      if (dealId && !mongoose.Types.ObjectId.isValid(String(dealId))) {
+        return res.status(400).json({ ok: false, message: 'Invalid dealId' });
+      }
+
+      // Normalize dueAt if provided
+      let dueAtDate: Date | undefined = undefined;
+      if (dueAt) {
+        const d = new Date(dueAt);
+        if (!isNaN(d.getTime())) dueAtDate = d;
+      }
 
       const payload: any = {
         type,
         title,
         notes,
         priority,
-        dueAt,
+        dueAt: dueAtDate,
         contactId,
         dealId,
         attachments,
+        company,
         status: 'open',
         ownerId: isAdminOrManager(role) ? (ownerId || requesterId) : requesterId,
       };
@@ -109,6 +133,10 @@ export const activityController = {
       const created = await Activity.create(payload);
       return res.json({ ok: true, data: created });
     } catch (err) {
+      // Convert common cast errors to 400 to surface better feedback
+      if ((err as any)?.name === 'CastError') {
+        return res.status(400).json({ ok: false, message: (err as any).message });
+      }
       return next(err);
     }
   },
@@ -195,7 +223,12 @@ export const activityController = {
       const now = new Date();
       filter.dueAt = { $gte: now };
 
-      const items = await Activity.find(filter).sort({ dueAt: 1 }).limit(limit).lean();
+      const items = await Activity.find(filter)
+        .sort({ dueAt: 1 })
+        .limit(limit)
+        .populate({ path: 'contactId', select: 'fullName email company' })
+        .populate({ path: 'ownerId', select: 'fullName email role' })
+        .lean();
       return res.json({ ok: true, data: items });
     } catch (err) {
       return next(err);

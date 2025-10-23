@@ -26,12 +26,20 @@ export function createApp() {
 
   app.set('trust proxy', 1);
   app.use(helmet());
+  const isDev = ENV.NODE_ENV !== 'production';
   const allowed = (ENV.ALLOWED_ORIGINS || []).map((s: string) => s.trim()).filter(Boolean);
-  app.use(cors({ origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (!allowed.length || allowed.includes(origin)) return cb(null, true);
-    return cb(new Error('CORS blocked'));
-  }, credentials: true }));
+  app.use(cors(
+    isDev
+      ? { origin: true, credentials: true }
+      : {
+          origin: (origin, cb) => {
+            if (!origin) return cb(null, true);
+            if (!allowed.length || allowed.includes(origin)) return cb(null, true);
+            return cb(new Error('CORS blocked'));
+          },
+          credentials: true,
+        }
+  ));
   app.use(express.json());
   app.use(cookieParser());
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));

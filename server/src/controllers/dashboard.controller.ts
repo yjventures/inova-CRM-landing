@@ -13,15 +13,19 @@ export const dashboardController = {
       const [
         totalDeals,
         wonDeals,
+        lostDeals,
         totalContacts,
-        openActivities,
+        totalActivities,
         pipelineAgg,
         wonValueAgg,
+        avgDealSizeAgg,
+        avgCycleAgg,
       ] = await Promise.all([
         Deal.countDocuments({ deletedAt: null }),
         Deal.countDocuments({ deletedAt: null, stage: 'Closed Won' }),
+        Deal.countDocuments({ deletedAt: null, stage: 'Closed Lost' }),
         Contact.countDocuments(deletedNull as any),
-        Activity.countDocuments({ deletedAt: null, status: 'open' }),
+        Activity.countDocuments({ deletedAt: null }),
         Deal.aggregate([
           { $match: { deletedAt: null, isActive: true } },
           { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -30,10 +34,21 @@ export const dashboardController = {
           { $match: { deletedAt: null, stage: 'Closed Won' } },
           { $group: { _id: null, total: { $sum: '$amount' } } },
         ]),
+        Deal.aggregate([
+          { $match: { deletedAt: null, isActive: true } },
+          { $group: { _id: null, avgAmount: { $avg: '$amount' } } },
+        ]),
+        Deal.aggregate([
+          { $match: { deletedAt: null, stage: 'Closed Won' } },
+          { $project: { cycleMs: { $subtract: ['$updatedAt', '$createdAt'] } } },
+          { $group: { _id: null, avgCycleMs: { $avg: '$cycleMs' } } },
+        ]),
       ]);
 
       const pipelineValue = (pipelineAgg[0]?.total as number) ?? 0;
       const wonValue = (wonValueAgg[0]?.total as number) ?? 0;
+      const avgDealSize = (avgDealSizeAgg[0]?.avgAmount as number) ?? 0;
+      const avgSalesCycleDays = avgCycleAgg[0]?.avgCycleMs ? Math.round(Number(avgCycleAgg[0].avgCycleMs) / (1000 * 60 * 60 * 24)) : 0;
 
       const quotaAchievement = QUOTA > 0 ? (wonValue / QUOTA) * 100 : 0;
       const winRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0;
@@ -43,11 +58,16 @@ export const dashboardController = {
         data: {
           totalDeals,
           wonDeals,
+          lostDeals,
           totalContacts,
-          openActivities,
+          totalActivities,
           pipelineValue,
           quotaAchievement,
+          quotaTarget: QUOTA,
+          wonValue,
           winRate,
+          avgDealSize,
+          avgSalesCycleDays,
         },
       });
     } catch (err) {

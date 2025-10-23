@@ -59,4 +59,16 @@ export function useContactActivities(contactId?: string) {
   });
 }
 
+export function useContactNotes(contactId?: string) {
+  return useQuery({
+    queryKey: ['contacts', contactId, 'notes'],
+    queryFn: async () => {
+      if (!contactId) return [] as any[];
+      const res = await get<any>(`/contacts/${contactId}/notes`);
+      return res?.data ?? [];
+    },
+    enabled: Boolean(contactId),
+  });
+}
+
 

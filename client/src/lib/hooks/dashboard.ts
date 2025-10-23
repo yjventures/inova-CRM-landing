@@ -49,9 +49,27 @@ export function useDealsPipeline() {
     queryKey: ['deals', 'pipeline'],
     queryFn: async () => {
       const res = await get<any>('/deals');
-      const items = (res?.data ?? []) as Array<{ _id: string; title: string; amount: number; probability: number; stage: string; ownerId?: string }>;
+      const items = (res?.data ?? []) as Array<{ _id: string; title: string; amount: number; probability: number; stage: string; ownerId?: any; contactId?: any; createdAt?: string; updatedAt?: string }>;
+
+      // Normalize to UI-friendly shape: add value alias, stageId, and placeholders
+      const normalized = items.map((d) => ({
+        ...d,
+        // UI components sometimes expect `value`; mirror from amount
+        value: d.amount,
+        // Stable stage id for CSS/keys if needed
+        stageId: (d.stage || '').toLowerCase().replace(/\s+/g, '-'),
+        // Contact/owner details
+        contact: typeof d.contactId === 'object' ? (d.contactId.fullName || '—') : '—',
+        company: typeof d.contactId === 'object' ? (d.contactId.company || '—') : '—',
+        owner: typeof d.ownerId === 'object' ? (d.ownerId.fullName || '—') : '—',
+        avatar: undefined,
+        // Timing metrics
+        daysInStage: d.updatedAt ? Math.max(0, Math.floor((Date.now() - new Date(d.updatedAt).getTime()) / (1000*60*60*24))) : undefined,
+        lastStageUpdate: d.updatedAt,
+      }));
+
       const byStage: Record<string, Array<any>> = {};
-      for (const d of items) {
+      for (const d of normalized) {
         if (!byStage[d.stage]) byStage[d.stage] = [];
         byStage[d.stage].push(d);
       }
@@ -98,6 +116,18 @@ export function useDealMove() {
       qc.invalidateQueries({ queryKey: ['dashboard', 'pipeline-summary'] });
       qc.invalidateQueries({ queryKey: ['dashboard', 'kpis'] });
     },
+  });
+}
+
+
+export function usePerformanceTrend(params?: Record<string, any>) {
+  return useQuery({
+    queryKey: ['dashboard', 'performance-trend', params ?? {}],
+    queryFn: async () => {
+      const res = await get<any>('/dashboard/performance-trend', params);
+      return res?.data; // { range, series: [{month, actual, forecast}], totals }
+    },
+    keepPreviousData: true,
   });
 }
 

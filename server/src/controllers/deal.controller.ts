@@ -62,7 +62,13 @@ export const dealController = {
 
       const skip = (page - 1) * limit;
       const [items, total] = await Promise.all([
-        Deal.find(filter, projection).sort(sort as any).skip(skip).limit(limit).lean(),
+        Deal.find(filter, projection)
+          .sort(sort as any)
+          .skip(skip)
+          .limit(limit)
+          .populate('contactId', 'fullName company')
+          .populate('ownerId', 'fullName email role')
+          .lean(),
         Deal.countDocuments(filter),
       ]);
 

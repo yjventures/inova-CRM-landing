@@ -7,19 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import Loading from "@/components/common/Loading";
 import ErrorState from "@/components/common/ErrorState";
 import { useState, useMemo } from "react";
-import { useAnalyticsOverview, useMonthlyForecast, useMonthlyTrend } from "@/lib/hooks/analytics";
+import { useDashboardKpis, usePipelineSummary, usePerformanceTrend } from "@/lib/hooks/dashboard";
 
 export default function Analytics() {
   const [range, setRange] = useState<'7days'|'30days'|'90days'|'year'>('30days');
   const [territory, setTerritory] = useState('all');
   const [rep, setRep] = useState('all');
   const filters = useMemo(()=>({ range, territory: territory === 'all' ? undefined : territory, rep: rep === 'all' ? undefined : rep }), [range, territory, rep]);
-  const { data: overview } = useAnalyticsOverview(filters);
-  const { data: forecast } = useMonthlyForecast(filters);
-  const { data: trend } = useMonthlyTrend(filters);
+  const { data: kpis } = useDashboardKpis();
+  const { data: pipelineSummary } = usePipelineSummary();
+  const { data: perf } = usePerformanceTrend({ range: range === 'year' ? 'last12' : 'last6' });
 
   const exportJson = () => {
-    const payload = { overview, forecast, trend };
+    const payload = { kpis, pipelineSummary, perf };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -125,7 +125,7 @@ export default function Analytics() {
             <TrendingUp className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$45,250</div>
+            <div className="text-3xl font-bold">{formatCurrency(kpis?.avgDealSize)}</div>
             <div className="mt-1 flex items-center gap-1 text-sm text-success">
               <TrendingUp className="h-3 w-3" />
               <span>+12.5%</span>
@@ -141,7 +141,7 @@ export default function Analytics() {
             <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">42 days</div>
+            <div className="text-3xl font-bold">{(kpis?.avgSalesCycleDays ?? 0)} days</div>
             <div className="mt-1 flex items-center gap-1 text-sm text-destructive">
               <TrendingDown className="h-3 w-3" />
               <span>-8.2%</span>
@@ -157,7 +157,7 @@ export default function Analytics() {
             <TrendingUp className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">28.4%</div>
+            <div className="text-3xl font-bold">{formatPercent(kpis?.winRate)}</div>
             <div className="mt-1 flex items-center gap-1 text-sm text-success">
               <TrendingUp className="h-3 w-3" />
               <span>+3.1%</span>
@@ -173,7 +173,7 @@ export default function Analytics() {
             <TrendingUp className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$1.2M/month</div>
+            <div className="text-3xl font-bold">{formatCurrencyCompact((pipelineSummary?.totals?.weightedValue ?? 0) / Math.max(1, monthsInRange(range)))}/month</div>
             <div className="mt-1 flex items-center gap-1 text-sm text-success">
               <TrendingUp className="h-3 w-3" />
               <span>+15.7%</span>
@@ -192,7 +192,7 @@ export default function Analytics() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Lead</span>
-                  <span className="text-muted-foreground">$73K • 2 deals</span>
+                  <span className="text-muted-foreground">{formatCurrencyCompact(stageValue(pipelineSummary,'Lead'))} • {stageCount(pipelineSummary,'Lead')} deals</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted">
                   <div className="h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-500" style={{ width: "100%" }} />
@@ -202,7 +202,7 @@ export default function Analytics() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Qualified</span>
-                  <span className="text-muted-foreground">$195K • 2 deals</span>
+                  <span className="text-muted-foreground">{formatCurrencyCompact(stageValue(pipelineSummary,'Qualified'))} • {stageCount(pipelineSummary,'Qualified')} deals</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted">
                   <div className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" style={{ width: "85%" }} />
@@ -212,7 +212,7 @@ export default function Analytics() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Proposal</span>
-                  <span className="text-muted-foreground">$250K • 1 deal</span>
+                  <span className="text-muted-foreground">{formatCurrencyCompact(stageValue(pipelineSummary,'Proposal'))} • {stageCount(pipelineSummary,'Proposal')} deals</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted">
                   <div className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-600" style={{ width: "65%" }} />
@@ -222,7 +222,7 @@ export default function Analytics() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Negotiation</span>
-                  <span className="text-muted-foreground">$180K • 1 deal</span>
+                  <span className="text-muted-foreground">{formatCurrencyCompact(stageValue(pipelineSummary,'Negotiation'))} • {stageCount(pipelineSummary,'Negotiation')} deals</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted">
                   <div className="h-3 rounded-full bg-gradient-to-r from-purple-600 to-green-500" style={{ width: "45%" }} />
@@ -232,7 +232,7 @@ export default function Analytics() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Closed Won</span>
-                  <span className="text-muted-foreground">$35K • 1 deal</span>
+                  <span className="text-muted-foreground">{formatCurrencyCompact(stageValue(pipelineSummary,'Closed Won'))} • {stageCount(pipelineSummary,'Closed Won')} deals</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-muted">
                   <div className="h-3 rounded-full bg-gradient-to-r from-green-500 to-green-600" style={{ width: "25%" }} />
@@ -264,22 +264,22 @@ export default function Analytics() {
               </div>
 
               <div className="relative h-64 border-l border-b">
-                {/* Y-axis labels */}
-                <div className="absolute left-0 top-0 -translate-x-full pr-2 text-xs text-muted-foreground">
-                  $220k
+                {/* Y-axis labels (inside the plot area) */}
+                <div className="absolute left-2 top-0 text-xs text-muted-foreground">
+                  {formatCurrencyCompact(maxYAxis(perf))}
                 </div>
-                <div className="absolute left-0 top-1/4 -translate-x-full pr-2 text-xs text-muted-foreground">
-                  $165k
+                <div className="absolute left-2 top-1/4 text-xs text-muted-foreground">
+                  {formatCurrencyCompact(maxYAxis(perf) * 0.75)}
                 </div>
-                <div className="absolute left-0 top-1/2 -translate-x-full pr-2 text-xs text-muted-foreground">
-                  $110k
+                <div className="absolute left-2 top-1/2 text-xs text-muted-foreground">
+                  {formatCurrencyCompact(maxYAxis(perf) * 0.5)}
                 </div>
-                <div className="absolute left-0 top-3/4 -translate-x-full pr-2 text-xs text-muted-foreground">
-                  $55k
+                <div className="absolute left-2 top-3/4 text-xs text-muted-foreground">
+                  {formatCurrencyCompact(maxYAxis(perf) * 0.25)}
                 </div>
 
-                {/* Simple line chart visualization */}
-                <svg className="h-full w-full" viewBox="0 0 400 200">
+                 {/* Simple line chart visualization from performance trend */}
+                 <svg className="h-full w-full" viewBox="0 0 400 200">
                   {/* Grid lines */}
                   <line x1="0" y1="0" x2="400" y2="0" stroke="currentColor" strokeWidth="1" className="text-border" strokeDasharray="4 4" />
                   <line x1="0" y1="50" x2="400" y2="50" stroke="currentColor" strokeWidth="1" className="text-border" strokeDasharray="4 4" />
@@ -287,36 +287,25 @@ export default function Analytics() {
                   <line x1="0" y1="150" x2="400" y2="150" stroke="currentColor" strokeWidth="1" className="text-border" strokeDasharray="4 4" />
 
                   {/* Actual line */}
-                  <polyline
-                    points="0,170 50,160 100,145 150,135 200,125 250,115 300,105 350,95 400,85"
+                   <polyline
+                     points={toPolyline((perf as any)?.series || [], 'actual')}
                     fill="none"
                     stroke="hsl(var(--primary))"
                     strokeWidth="3"
                   />
                   
                   {/* Target line */}
-                  <polyline
-                    points="0,175 50,165 100,150 150,140 200,130 250,118 300,108 350,98 400,88"
+                   <polyline
+                     points={toPolyline((perf as any)?.series || [], 'forecast')}
                     fill="none"
                     stroke="hsl(var(--success))"
                     strokeWidth="2"
                   />
 
-                  {/* Forecast line */}
-                  <polyline
-                    points="300,105 350,93 400,82"
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeDasharray="6 6"
-                  />
-
-                  {/* Data points */}
-                  <circle cx="0" cy="170" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="100" cy="145" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="200" cy="125" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="300" cy="105" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="400" cy="85" r="4" fill="hsl(var(--primary))" />
+                  {/* Data points (actual) */}
+                   {(((perf as any)?.series) || []).map((p: any, i: number, arr: any[]) => (
+                    <circle key={`a-${i}`} cx={(i / Math.max(1, arr.length - 1)) * 400} cy={yCoord(p.actual, perf)} r="3" fill="hsl(var(--primary))" />
+                  ))}
                 </svg>
               </div>
             </div>
@@ -325,4 +314,49 @@ export default function Analytics() {
       </div>
     </div>
   );
+}
+
+function formatPercent(v?: number) {
+  return `${Math.round(Number(v || 0))}%`;
+}
+function formatCurrency(n?: number) {
+  const v = Number(n || 0);
+  return `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+function formatCurrencyCompact(n?: number) {
+  const v = Number(n || 0);
+  if (v >= 1_000_000) return `$${Math.round(v / 1_000_000)}M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
+  return `$${Math.round(v)}`;
+}
+function monthsInRange(range: '7days'|'30days'|'90days'|'year') {
+  if (range === 'year') return 12;
+  if (range === '90days') return 3;
+  if (range === '30days') return 1;
+  return 1; // 7 days ~ 1 month proxy
+}
+function stageValue(summary: any, stage: string) {
+  const s = (summary?.stages || []).find((x: any) => x.stage === stage);
+  return s?.totalValue || 0;
+}
+function stageCount(summary: any, stage: string) {
+  const s = (summary?.stages || []).find((x: any) => x.stage === stage);
+  return s?.count || 0;
+}
+function maxYAxis(perf: any) {
+  const max = Math.max(1, ...((perf?.series || []).map((p: any) => Math.max(Number(p.actual || 0), Number(p.forecast || 0)))));
+  // Round up to a tidy scale
+  if (max >= 1_000_000) return Math.ceil(max / 100_000) * 100_000;
+  if (max >= 100_000) return Math.ceil(max / 10_000) * 10_000;
+  return Math.ceil(max / 1_000) * 1_000;
+}
+function toPolyline(series: Array<any>, key: 'actual'|'forecast') {
+  const maxY = maxYAxis({ series });
+  const pts = series.map((p, i) => `${(i / Math.max(1, series.length - 1)) * 400},${yCoord(Number(p[key] || 0), { series })}`);
+  return pts.join(' ');
+}
+function yCoord(value: number, perf: any) {
+  const maxY = maxYAxis(perf);
+  const y = 200 - (Math.min(value, maxY) / maxY) * 200;
+  return y;
 }

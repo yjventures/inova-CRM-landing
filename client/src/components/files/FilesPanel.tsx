@@ -100,8 +100,9 @@ export default function FilesPanel({ entityType, entityId }: { entityType: Entit
                         <Download className="h-4 w-4" />
                       </a>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
+                        className="bg-red-100 text-red-700 border-red-300 hover:bg-red-200 hover:text-red-800"
                         onClick={() => deleteMutation.mutate({ fileId: f._id })}
                         disabled={deleteMutation.isPending}
                       >

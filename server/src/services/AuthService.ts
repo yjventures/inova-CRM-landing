@@ -14,7 +14,8 @@ export class AuthService {
     if (!user.isActive) throw new Error('User is inactive');
 
     const payload = { sub: user._id.toString(), role: user.role, email: user.email };
-    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, '15m');
+    const accessTtl = user.role === 'admin' ? '30m' : '15m';
+    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, accessTtl);
     const refreshToken = generateToken(payload, ENV.JWT_REFRESH_SECRET as string, '7d');
 
     return {
@@ -35,7 +36,8 @@ export class AuthService {
     if (!user.isActive) throw new Error('User is inactive');
 
     const payload = { sub: user._id.toString(), role: user.role, email: user.email };
-    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, '15m');
+    const accessTtl = user.role === 'admin' ? '30m' : '15m';
+    const accessToken = generateToken(payload, ENV.JWT_ACCESS_SECRET as string, accessTtl);
     const newRefreshToken = generateToken(payload, ENV.JWT_REFRESH_SECRET as string, '7d');
     return {
       user: user.toSafeJSON(),

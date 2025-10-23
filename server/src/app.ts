@@ -35,6 +35,16 @@ export function createApp() {
           origin: (origin, cb) => {
             if (!origin) return cb(null, true);
             if (!allowed.length || allowed.includes(origin)) return cb(null, true);
+            // support wildcard patterns like *.vercel.app
+            const pass = allowed.some((pattern: string) => {
+              if (pattern === '*') return true;
+              if (pattern.startsWith('*.')) {
+                const suffix = pattern.slice(1); // remove leading '*'
+                return origin.endsWith(suffix);
+              }
+              return false;
+            });
+            if (pass) return cb(null, true);
             return cb(new Error('CORS blocked'));
           },
           credentials: true,

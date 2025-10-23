@@ -15,9 +15,10 @@ async function bootstrap() {
     }
 
     const app = createApp();
-    app.listen(Number(ENV.PORT), () => {
-      console.log(`[server] http://localhost:${ENV.PORT}`);
-      console.log(`[server] Running on http://localhost:${ENV.PORT}`);
+    const port = process.env.PORT ? Number(process.env.PORT) : Number(ENV.PORT || 4000);
+    console.log('[env]', process.env.NODE_ENV);
+    app.listen(port, () => {
+      console.log('[server] Listening on', port);
     });
   } catch (err) {
     console.error('[bootstrap] failed', err);

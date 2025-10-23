@@ -77,6 +77,9 @@ export function createApp() {
   app.use('/uploads', express.static(uploadsDir));
   app.use('/api', dealRoutes);
 
+  // 404 handler must be last
+  app.use((_req, res) => res.status(404).send('Not Found'));
+
   // Basic error handler
   app.use((err: any, _req: any, res: any, _next: any) => {
     const status = err.status || 500;
